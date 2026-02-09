@@ -1,0 +1,132 @@
+version: "3.8"
+
+services:
+  # ─────────────────────────────────────────────
+  # Databases
+  # ─────────────────────────────────────────────
+  order-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: order_user
+      POSTGRES_PASSWORD: order_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - order_data:/var/lib/postgresql/data
+      - ./db/init/order.sql:/docker-entrypoint-initdb.d/01_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U order_user -d order_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  inventory-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: inventory_user
+      POSTGRES_PASSWORD: inventory_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - inventory_data:/var/lib/postgresql/data
+      - ./db/init/inventory.sql:/docker-entrypoint-initdb.d/01_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory_user -d inventory_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Message Broker (Redis Pub/Sub for events)
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # Order Service (CQRS + Event Sourcing)
+  # ─────────────────────────────────────────────
+  order-service:
+    build: ./services/order
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://order_user:order_pass@order-db:5432/order_db
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      order-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────
+  # Inventory Service (CQRS + Event Sourcing)
+  # ─────────────────────────────────────────────
+  inventory-service:
+    build: ./services/inventory
+    ports:
+      - "8002:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://inventory_user:inventory_pass@inventory-db:5432/inventory_db
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────
+  # Saga Orchestrator
+  # ─────────────────────────────────────────────
+  saga-service:
+    build: ./services/saga
+    ports:
+      - "8003:8000"
+    environment:
+      REDIS_URL: redis://redis:6379
+      ORDER_SERVICE_URL: http://order-service:8000
+      INVENTORY_SERVICE_URL: http://inventory-service:8000
+    depends_on:
+      redis:
+        condition: service_healthy
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+
+  # ─────────────────────────────────────────────
+  # BFF (Backend for Frontend)
+  # ─────────────────────────────────────────────
+  bff:
+    build: ./services/bff
+    ports:
+      - "8000:8000"
+    environment:
+      ORDER_SERVICE_URL: http://order-service:8000
+      INVENTORY_SERVICE_URL: http://inventory-service:8000
+      SAGA_SERVICE_URL: http://saga-service:8000
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - saga-service
+
+  # ─────────────────────────────────────────────
+  # React Frontend
+  # ─────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - bff
+
+volumes:
+  order_data:
+  inventory_data:
