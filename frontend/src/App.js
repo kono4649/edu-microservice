@@ -3,6 +3,7 @@ import ProductList from './components/ProductList';
 import OrderForm from './components/OrderForm';
 import OrderHistory from './components/OrderHistory';
 import EventLog from './components/EventLog';
+import MarketingDashboard from './components/MarketingDashboard';
 import SagaLog from './components/SagaLog';
 
 const BFF_URL = process.env.REACT_APP_BFF_URL || 'http://localhost:8000';
@@ -73,6 +74,7 @@ export default function App() {
   const tabs = [
     { id: 'products', label: '商品一覧' },
     { id: 'orders', label: '注文履歴' },
+    { id: 'marketing', label: 'マーケティング' },
     { id: 'events', label: 'イベントログ' },
   ];
 
@@ -92,8 +94,12 @@ export default function App() {
   [Saga Orchestrator] ← 分散トランザクションを制御
        / \\
 [Order Svc]  [Inventory Svc] ← 各サービスが CQRS + Event Sourcing
-     |              |
- [Order DB]    [Inventory DB] ← Database per Service
+     |    \\        |
+ [Order DB] \\  [Inventory DB] ← Database per Service
+             \\
+        [Marketing Svc] ← Redis Pub/Sub で order_events を購読
+              |
+         [Marketing DB] ← マーケティング最適化リードモデル
         `}</pre>
       </div>
 
@@ -143,6 +149,17 @@ export default function App() {
           <div>
             <h2 style={styles.sectionTitle}>注文履歴 (Order Service Read Model)</h2>
             <OrderHistory orders={orders} />
+          </div>
+        )}
+
+        {activeTab === 'marketing' && (
+          <div>
+            <h2 style={styles.sectionTitle}>マーケティングダッシュボード (Marketing Service Read Model)</h2>
+            <p style={styles.hint}>
+              order_events を Redis Pub/Sub で購読し、マーケティング最適化されたリードモデルから表示。
+              Order Service のリードモデルとは独立した別の投影(Projection)。
+            </p>
+            <MarketingDashboard />
           </div>
         )}
 

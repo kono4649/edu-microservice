@@ -12,11 +12,12 @@ BFF パターン:
   - バックエンドサービスの内部構造をフロントエンドから隠蔽
   - 認証・認可の集中管理（本サンプルでは省略）
 
-  ┌──────────┐     ┌─────┐     ┌───────────────┐
-  │  React   │────▶│ BFF │────▶│ Order Service │
-  │ Frontend │     │     │────▶│ Inventory Svc │
-  │          │     │     │────▶│ Saga Service  │
-  └──────────┘     └─────┘     └───────────────┘
+  ┌──────────┐     ┌─────┐     ┌─────────────────┐
+  │  React   │────▶│ BFF │────▶│ Order Service   │
+  │ Frontend │     │     │────▶│ Inventory Svc   │
+  │          │     │     │────▶│ Saga Service    │
+  │          │     │     │────▶│ Marketing Svc   │
+  └──────────┘     └─────┘     └─────────────────┘
 """
 
 import os
@@ -32,6 +33,7 @@ from pydantic import BaseModel
 ORDER_SERVICE_URL = os.environ["ORDER_SERVICE_URL"]
 INVENTORY_SERVICE_URL = os.environ["INVENTORY_SERVICE_URL"]
 SAGA_SERVICE_URL = os.environ["SAGA_SERVICE_URL"]
+MARKETING_SERVICE_URL = os.environ["MARKETING_SERVICE_URL"]
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
 
 redis_pool: aioredis.Redis | None = None
@@ -214,6 +216,53 @@ async def get_all_events():
 
         all_events.sort(key=lambda x: x.get("created_at", ""))
         return all_events
+
+
+# ── マーケティングダッシュボード ─────────────────
+
+
+@app.get("/api/marketing/overview")
+async def get_marketing_overview():
+    """マーケティング概要を取得(Marketing Service から)"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{MARKETING_SERVICE_URL}/queries/marketing/overview"
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+@app.get("/api/marketing/customers")
+async def get_marketing_customers():
+    """顧客サマリーを取得"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{MARKETING_SERVICE_URL}/queries/marketing/customers"
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+@app.get("/api/marketing/products")
+async def get_marketing_products():
+    """商品人気ランキングを取得"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{MARKETING_SERVICE_URL}/queries/marketing/products"
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+@app.get("/api/marketing/daily")
+async def get_marketing_daily():
+    """日別売上サマリーを取得"""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        resp = await client.get(
+            f"{MARKETING_SERVICE_URL}/queries/marketing/daily"
+        )
+        resp.raise_for_status()
+        return resp.json()
 
 
 @app.get("/health")

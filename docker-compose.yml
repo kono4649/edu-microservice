@@ -39,6 +39,26 @@ services:
       retries: 5
 
   # ─────────────────────────────────────────────
+  # Marketing Database
+  # ─────────────────────────────────────────────
+  marketing-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: marketing_db
+      POSTGRES_USER: marketing_user
+      POSTGRES_PASSWORD: marketing_pass
+    ports:
+      - "5434:5432"
+    volumes:
+      - marketing_data:/var/lib/postgresql/data
+      - ./db/init/marketing.sql:/docker-entrypoint-initdb.d/01_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketing_user -d marketing_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─────────────────────────────────────────────
   # Message Broker (Redis Pub/Sub for events)
   # ─────────────────────────────────────────────
   redis:
@@ -103,6 +123,22 @@ services:
         condition: service_started
 
   # ─────────────────────────────────────────────
+  # Marketing Service (CQRS Read-Side Projection)
+  # ─────────────────────────────────────────────
+  marketing-service:
+    build: ./services/marketing
+    ports:
+      - "8004:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://marketing_user:marketing_pass@marketing-db:5432/marketing_db
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      marketing-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ─────────────────────────────────────────────
   # BFF (Backend for Frontend)
   # ─────────────────────────────────────────────
   bff:
@@ -113,9 +149,11 @@ services:
       ORDER_SERVICE_URL: http://order-service:8000
       INVENTORY_SERVICE_URL: http://inventory-service:8000
       SAGA_SERVICE_URL: http://saga-service:8000
+      MARKETING_SERVICE_URL: http://marketing-service:8000
       REDIS_URL: redis://redis:6379
     depends_on:
       - saga-service
+      - marketing-service
 
   # ─────────────────────────────────────────────
   # React Frontend
@@ -130,3 +168,4 @@ services:
 volumes:
   order_data:
   inventory_data:
+  marketing_data:
