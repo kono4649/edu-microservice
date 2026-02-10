@@ -14,9 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-async def handle_event(
-    session: AsyncSession, event_type: str, data: dict
-) -> None:
+async def handle_event(session: AsyncSession, event_type: str, data: dict) -> None:
     """イベントタイプに応じた投影ハンドラを呼び出す。"""
     handler = {
         "OrderCreated": _project_order_created,

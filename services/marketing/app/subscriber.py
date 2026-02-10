@@ -47,9 +47,7 @@ async def run_subscriber(
                     event_data = event.get("data", {})
 
                     async with async_session_factory() as session:
-                        await projections.handle_event(
-                            session, event_type, event_data
-                        )
+                        await projections.handle_event(session, event_type, event_data)
 
                     logger.info("Projected event: %s", event_type)
                 except Exception:
