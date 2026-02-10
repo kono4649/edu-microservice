@@ -24,6 +24,7 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -54,6 +55,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Marketing Service", lifespan=lifespan)
+
+# CORS 設定 — 外部フロントエンド(別リポジトリ)から直接アクセスを許可
+# 本番では ALLOWED_ORIGINS 環境変数で許可するオリジンを制限すること
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
 
 
 # ── Query Endpoints (Read 側のみ) ─────────────────
