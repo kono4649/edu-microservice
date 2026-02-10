@@ -23,14 +23,20 @@ async def list_customer_summaries(session: AsyncSession) -> list[dict]:
             "cancelled_orders": row.cancelled_orders,
             "total_revenue": float(row.total_revenue),
             "avg_order_value": float(row.avg_order_value),
-            "first_order_at": row.first_order_at.isoformat() if row.first_order_at else None,
-            "last_order_at": row.last_order_at.isoformat() if row.last_order_at else None,
+            "first_order_at": row.first_order_at.isoformat()
+            if row.first_order_at
+            else None,
+            "last_order_at": row.last_order_at.isoformat()
+            if row.last_order_at
+            else None,
         }
         for row in result.fetchall()
     ]
 
 
-async def get_customer_summary(session: AsyncSession, customer_name: str) -> dict | None:
+async def get_customer_summary(
+    session: AsyncSession, customer_name: str
+) -> dict | None:
     """特定顧客のサマリー"""
     result = await session.execute(
         text("SELECT * FROM customer_summary WHERE customer_name = :name"),
@@ -46,7 +52,9 @@ async def get_customer_summary(session: AsyncSession, customer_name: str) -> dic
         "cancelled_orders": row.cancelled_orders,
         "total_revenue": float(row.total_revenue),
         "avg_order_value": float(row.avg_order_value),
-        "first_order_at": row.first_order_at.isoformat() if row.first_order_at else None,
+        "first_order_at": row.first_order_at.isoformat()
+        if row.first_order_at
+        else None,
         "last_order_at": row.last_order_at.isoformat() if row.last_order_at else None,
     }
 

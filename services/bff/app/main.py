@@ -225,9 +225,7 @@ async def get_all_events():
 async def get_marketing_overview():
     """マーケティング概要を取得(Marketing Service から)"""
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            f"{MARKETING_SERVICE_URL}/queries/marketing/overview"
-        )
+        resp = await client.get(f"{MARKETING_SERVICE_URL}/queries/marketing/overview")
         resp.raise_for_status()
         return resp.json()
 
@@ -236,9 +234,7 @@ async def get_marketing_overview():
 async def get_marketing_customers():
     """顧客サマリーを取得"""
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            f"{MARKETING_SERVICE_URL}/queries/marketing/customers"
-        )
+        resp = await client.get(f"{MARKETING_SERVICE_URL}/queries/marketing/customers")
         resp.raise_for_status()
         return resp.json()
 
@@ -247,9 +243,7 @@ async def get_marketing_customers():
 async def get_marketing_products():
     """商品人気ランキングを取得"""
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            f"{MARKETING_SERVICE_URL}/queries/marketing/products"
-        )
+        resp = await client.get(f"{MARKETING_SERVICE_URL}/queries/marketing/products")
         resp.raise_for_status()
         return resp.json()
 
@@ -258,9 +252,7 @@ async def get_marketing_products():
 async def get_marketing_daily():
     """日別売上サマリーを取得"""
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            f"{MARKETING_SERVICE_URL}/queries/marketing/daily"
-        )
+        resp = await client.get(f"{MARKETING_SERVICE_URL}/queries/marketing/daily")
         resp.raise_for_status()
         return resp.json()
 
