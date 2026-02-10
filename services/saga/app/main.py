@@ -52,7 +52,9 @@ async def place_order(req: PlaceOrderRequest):
     オーケストレーションする。
     """
     orchestrator = OrderSagaOrchestrator(
-        ORDER_SERVICE_URL, INVENTORY_SERVICE_URL, redis_pool,
+        ORDER_SERVICE_URL,
+        INVENTORY_SERVICE_URL,
+        redis_pool,
     )
     result = await orchestrator.execute(
         order_id=req.order_id,
