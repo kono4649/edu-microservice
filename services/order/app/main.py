@@ -38,6 +38,7 @@ app = FastAPI(title="Order Service", lifespan=lifespan)
 
 # ── Request / Response Models ────────────────────
 
+
 class CreateOrderRequest(BaseModel):
     order_id: UUID
     customer_name: str
@@ -53,15 +54,20 @@ class UpdateStatusRequest(BaseModel):
 
 # ── Command Endpoints (Write 側) ─────────────────
 
+
 @app.post("/commands/orders")
 async def cmd_create_order(req: CreateOrderRequest):
     """注文作成コマンド"""
     async with async_session() as session:
         agg = await commands.create_order(
-            session, redis_pool,
-            req.order_id, req.customer_name,
-            req.product_id, req.product_name,
-            req.quantity, req.total_price,
+            session,
+            redis_pool,
+            req.order_id,
+            req.customer_name,
+            req.product_id,
+            req.product_name,
+            req.quantity,
+            req.total_price,
         )
         return {"order_id": str(agg.id), "status": agg.status, "version": agg.version}
 
@@ -84,6 +90,7 @@ async def cmd_cancel_order(order_id: UUID, req: UpdateStatusRequest):
 
 # ── Query Endpoints (Read 側) ────────────────────
 
+
 @app.get("/queries/orders")
 async def query_list_orders():
     """全注文をリードモデルから取得"""
@@ -102,6 +109,7 @@ async def query_get_order(order_id: UUID):
 
 
 # ── Event Store (学習・デバッグ用) ───────────────
+
 
 @app.get("/events")
 async def get_all_events():

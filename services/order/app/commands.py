@@ -74,10 +74,16 @@ async def create_order(
     await session.commit()
 
     # 3. Redis Pub/Sub でイベントを発行
-    await redis.publish("order_events", json.dumps({
-        "event_type": "OrderCreated",
-        "data": event_data,
-    }, default=str))
+    await redis.publish(
+        "order_events",
+        json.dumps(
+            {
+                "event_type": "OrderCreated",
+                "data": event_data,
+            },
+            default=str,
+        ),
+    )
 
     # 4. 集約を返す
     agg = OrderAggregate()
@@ -120,10 +126,16 @@ async def confirm_order(
 
     await session.commit()
 
-    await redis.publish("order_events", json.dumps({
-        "event_type": "OrderConfirmed",
-        "data": event_data,
-    }, default=str))
+    await redis.publish(
+        "order_events",
+        json.dumps(
+            {
+                "event_type": "OrderConfirmed",
+                "data": event_data,
+            },
+            default=str,
+        ),
+    )
 
     agg.apply_order_confirmed(event_data)
     agg.version = version
@@ -166,10 +178,16 @@ async def cancel_order(
 
     await session.commit()
 
-    await redis.publish("order_events", json.dumps({
-        "event_type": "OrderCancelled",
-        "data": event_data,
-    }, default=str))
+    await redis.publish(
+        "order_events",
+        json.dumps(
+            {
+                "event_type": "OrderCancelled",
+                "data": event_data,
+            },
+            default=str,
+        ),
+    )
 
     agg.apply_order_cancelled(event_data)
     agg.version = version

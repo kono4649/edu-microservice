@@ -57,7 +57,9 @@ async def load_events(
     return [
         {
             "event_type": row.event_type,
-            "event_data": json.loads(row.event_data) if isinstance(row.event_data, str) else row.event_data,
+            "event_data": json.loads(row.event_data)
+            if isinstance(row.event_data, str)
+            else row.event_data,
             "version": row.version,
             "created_at": row.created_at,
         }
@@ -78,7 +80,9 @@ async def load_all_events(session: AsyncSession) -> list[dict]:
             "aggregate_id": str(row.aggregate_id),
             "aggregate_type": row.aggregate_type,
             "event_type": row.event_type,
-            "event_data": json.loads(row.event_data) if isinstance(row.event_data, str) else row.event_data,
+            "event_data": json.loads(row.event_data)
+            if isinstance(row.event_data, str)
+            else row.event_data,
             "version": row.version,
             "created_at": row.created_at.isoformat() if row.created_at else None,
         }

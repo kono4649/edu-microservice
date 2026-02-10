@@ -58,15 +58,25 @@ async def reserve_inventory(
         current_version = events[-1]["version"] if events else 0
 
         await event_store.append_event(
-            session, product_id, "Inventory",
-            "InventoryReservationFailed", event_data, current_version,
+            session,
+            product_id,
+            "Inventory",
+            "InventoryReservationFailed",
+            event_data,
+            current_version,
         )
         await session.commit()
 
-        await redis.publish("inventory_events", json.dumps({
-            "event_type": "InventoryReservationFailed",
-            "data": event_data,
-        }, default=str))
+        await redis.publish(
+            "inventory_events",
+            json.dumps(
+                {
+                    "event_type": "InventoryReservationFailed",
+                    "data": event_data,
+                },
+                default=str,
+            ),
+        )
 
         return {
             "success": False,
@@ -84,8 +94,12 @@ async def reserve_inventory(
     current_version = events[-1]["version"] if events else 0
 
     await event_store.append_event(
-        session, product_id, "Inventory",
-        "InventoryReserved", event_data, current_version,
+        session,
+        product_id,
+        "Inventory",
+        "InventoryReserved",
+        event_data,
+        current_version,
     )
 
     # リードモデル更新
@@ -99,10 +113,16 @@ async def reserve_inventory(
     )
     await session.commit()
 
-    await redis.publish("inventory_events", json.dumps({
-        "event_type": "InventoryReserved",
-        "data": event_data,
-    }, default=str))
+    await redis.publish(
+        "inventory_events",
+        json.dumps(
+            {
+                "event_type": "InventoryReserved",
+                "data": event_data,
+            },
+            default=str,
+        ),
+    )
 
     return {"success": True}
 
@@ -131,8 +151,12 @@ async def release_inventory(
     current_version = events[-1]["version"] if events else 0
 
     await event_store.append_event(
-        session, product_id, "Inventory",
-        "InventoryReleased", event_data, current_version,
+        session,
+        product_id,
+        "Inventory",
+        "InventoryReleased",
+        event_data,
+        current_version,
     )
 
     await session.execute(
@@ -145,9 +169,15 @@ async def release_inventory(
     )
     await session.commit()
 
-    await redis.publish("inventory_events", json.dumps({
-        "event_type": "InventoryReleased",
-        "data": event_data,
-    }, default=str))
+    await redis.publish(
+        "inventory_events",
+        json.dumps(
+            {
+                "event_type": "InventoryReleased",
+                "data": event_data,
+            },
+            default=str,
+        ),
+    )
 
     return {"success": True}

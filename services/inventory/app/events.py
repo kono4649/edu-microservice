@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 class InventoryReserved(BaseModel):
     """在庫が引き当てられた"""
+
     product_id: UUID
     order_id: UUID
     quantity: int
@@ -20,6 +21,7 @@ class InventoryReserved(BaseModel):
 
 class InventoryReservationFailed(BaseModel):
     """在庫引き当てが失敗した（在庫不足）"""
+
     product_id: UUID
     order_id: UUID
     quantity_requested: int
@@ -29,6 +31,7 @@ class InventoryReservationFailed(BaseModel):
 
 class InventoryReleased(BaseModel):
     """在庫の引き当てが解放された（補償トランザクション）"""
+
     product_id: UUID
     order_id: UUID
     quantity: int

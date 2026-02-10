@@ -19,7 +19,6 @@ BFF パターン:
   └──────────┘     └─────┘     └───────────────┘
 """
 
-import json
 import os
 from contextlib import asynccontextmanager
 from uuid import UUID, uuid4
@@ -59,6 +58,7 @@ app.add_middleware(
 
 # ── Request Models ───────────────────────────────
 
+
 class PlaceOrderRequest(BaseModel):
     customer_name: str
     product_id: UUID
@@ -66,6 +66,7 @@ class PlaceOrderRequest(BaseModel):
 
 
 # ── フロントエンド向け集約 API ───────────────────
+
 
 @app.get("/api/products")
 async def get_products():
@@ -153,9 +154,7 @@ async def get_orders():
 async def get_order(order_id: UUID):
     """注文詳細を取得"""
     async with httpx.AsyncClient(timeout=10.0) as client:
-        resp = await client.get(
-            f"{ORDER_SERVICE_URL}/queries/orders/{order_id}"
-        )
+        resp = await client.get(f"{ORDER_SERVICE_URL}/queries/orders/{order_id}")
         if resp.status_code == 404:
             raise HTTPException(404, "Order not found")
         resp.raise_for_status()
@@ -181,28 +180,25 @@ async def get_dashboard():
 async def _parallel_fetch(client: httpx.AsyncClient):
     """複数サービスへ並列リクエスト"""
     import asyncio
+
     products_task = asyncio.create_task(
         client.get(f"{INVENTORY_SERVICE_URL}/queries/products")
     )
-    orders_task = asyncio.create_task(
-        client.get(f"{ORDER_SERVICE_URL}/queries/orders")
-    )
-    products_resp, orders_resp = await asyncio.gather(
-        products_task, orders_task
-    )
+    orders_task = asyncio.create_task(client.get(f"{ORDER_SERVICE_URL}/queries/orders"))
+    products_resp, orders_resp = await asyncio.gather(products_task, orders_task)
     return products_resp.json(), orders_resp.json()
 
 
 # ── イベントログ（学習用） ───────────────────────
+
 
 @app.get("/api/events")
 async def get_all_events():
     """全サービスのイベントを集約して時系列で返す（学習用）"""
     async with httpx.AsyncClient(timeout=10.0) as client:
         import asyncio
-        order_task = asyncio.create_task(
-            client.get(f"{ORDER_SERVICE_URL}/events")
-        )
+
+        order_task = asyncio.create_task(client.get(f"{ORDER_SERVICE_URL}/events"))
         inventory_task = asyncio.create_task(
             client.get(f"{INVENTORY_SERVICE_URL}/events")
         )

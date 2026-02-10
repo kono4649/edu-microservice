@@ -57,12 +57,14 @@ class OrderSagaOrchestrator:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             # ── Step 1: 注文を作成 ──────────────────────
-            saga_log.append({
-                "step": 1,
-                "action": "CreateOrder",
-                "status": "EXECUTING",
-                "timestamp": now,
-            })
+            saga_log.append(
+                {
+                    "step": 1,
+                    "action": "CreateOrder",
+                    "status": "EXECUTING",
+                    "timestamp": now,
+                }
+            )
 
             try:
                 resp = await client.post(
@@ -85,12 +87,14 @@ class OrderSagaOrchestrator:
                 return {"success": False, "saga_log": saga_log}
 
             # ── Step 2: 在庫を引き当て ──────────────────
-            saga_log.append({
-                "step": 2,
-                "action": "ReserveInventory",
-                "status": "EXECUTING",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            saga_log.append(
+                {
+                    "step": 2,
+                    "action": "ReserveInventory",
+                    "status": "EXECUTING",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
             try:
                 resp = await client.post(
@@ -108,12 +112,14 @@ class OrderSagaOrchestrator:
                 saga_log[-1]["error"] = e.response.text
 
                 # ── Step 3 (補償): 注文をキャンセル ─────
-                saga_log.append({
-                    "step": 3,
-                    "action": "CancelOrder (COMPENSATING)",
-                    "status": "EXECUTING",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
+                saga_log.append(
+                    {
+                        "step": 3,
+                        "action": "CancelOrder (COMPENSATING)",
+                        "status": "EXECUTING",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
 
                 try:
                     await client.post(
@@ -130,12 +136,14 @@ class OrderSagaOrchestrator:
                 saga_log[-1]["status"] = "FAILED"
                 saga_log[-1]["error"] = str(e)
 
-                saga_log.append({
-                    "step": 3,
-                    "action": "CancelOrder (COMPENSATING)",
-                    "status": "EXECUTING",
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
+                saga_log.append(
+                    {
+                        "step": 3,
+                        "action": "CancelOrder (COMPENSATING)",
+                        "status": "EXECUTING",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
                 try:
                     await client.post(
                         f"{self.order_url}/commands/orders/{order_id}/cancel",
@@ -149,12 +157,14 @@ class OrderSagaOrchestrator:
                 return {"success": False, "saga_log": saga_log}
 
             # ── Step 3: 注文を確定 ──────────────────────
-            saga_log.append({
-                "step": 3,
-                "action": "ConfirmOrder",
-                "status": "EXECUTING",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            saga_log.append(
+                {
+                    "step": 3,
+                    "action": "ConfirmOrder",
+                    "status": "EXECUTING",
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+            )
 
             try:
                 await client.post(
@@ -169,11 +179,20 @@ class OrderSagaOrchestrator:
             return {"success": True, "saga_log": saga_log}
 
     async def _publish_saga_event(
-        self, event_type: str, order_id: UUID, saga_log: list[dict],
+        self,
+        event_type: str,
+        order_id: UUID,
+        saga_log: list[dict],
     ) -> None:
         """Saga のイベントを Redis に発行する。"""
-        await self.redis.publish("saga_events", json.dumps({
-            "event_type": event_type,
-            "order_id": str(order_id),
-            "saga_log": saga_log,
-        }, default=str))
+        await self.redis.publish(
+            "saga_events",
+            json.dumps(
+                {
+                    "event_type": event_type,
+                    "order_id": str(order_id),
+                    "saga_log": saga_log,
+                },
+                default=str,
+            ),
+        )

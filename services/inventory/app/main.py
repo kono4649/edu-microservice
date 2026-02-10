@@ -37,6 +37,7 @@ app = FastAPI(title="Inventory Service", lifespan=lifespan)
 
 # ── Request Models ───────────────────────────────
 
+
 class ReserveRequest(BaseModel):
     order_id: UUID
     quantity: int
@@ -49,12 +50,17 @@ class ReleaseRequest(BaseModel):
 
 # ── Command Endpoints (Write 側) ─────────────────
 
+
 @app.post("/commands/inventory/{product_id}/reserve")
 async def cmd_reserve(product_id: UUID, req: ReserveRequest):
     """在庫引き当てコマンド"""
     async with async_session() as session:
         result = await commands.reserve_inventory(
-            session, redis_pool, product_id, req.order_id, req.quantity,
+            session,
+            redis_pool,
+            product_id,
+            req.order_id,
+            req.quantity,
         )
         if not result["success"]:
             raise HTTPException(status_code=409, detail=result["reason"])
@@ -66,11 +72,16 @@ async def cmd_release(product_id: UUID, req: ReleaseRequest):
     """在庫解放コマンド（補償トランザクション）"""
     async with async_session() as session:
         return await commands.release_inventory(
-            session, redis_pool, product_id, req.order_id, req.quantity,
+            session,
+            redis_pool,
+            product_id,
+            req.order_id,
+            req.quantity,
         )
 
 
 # ── Query Endpoints (Read 側) ────────────────────
+
 
 @app.get("/queries/products")
 async def query_list_products():
@@ -90,6 +101,7 @@ async def query_get_product(product_id: UUID):
 
 
 # ── Event Store (学習・デバッグ用) ───────────────
+
 
 @app.get("/events")
 async def get_all_events():
